@@ -1,0 +1,75 @@
+{
+  "app": {
+    "name": "auth-service"
+  },
+
+  "web": {
+    "port": 3000,
+    "prefork": false
+  },
+
+  "log": {
+    "level": 6
+  },
+
+  "database": {
+    "master": {
+      "host": "localhost",
+      "port": 5432,
+      "username": "postgres",
+      "password": "postgres",
+      "name": "shorten_db",
+      "sslmode": "disable",
+
+      "pool": {
+        "idle": 10,
+        "max": 100,
+        "lifetime": 300
+      }
+    },
+
+    "slave": {
+      "host": "localhost",
+      "port": 5432,
+      "username": "postgres",
+      "password": "postgres",
+      "name": "shorten_db",
+      "sslmode": "disable",
+
+      "pool": {
+        "idle": 10,
+        "max": 100,
+        "lifetime": 300
+      }
+    }
+  },
+
+  "redis": {
+    "host": "localhost",
+    "port": "6379",
+    "password": "",
+    "db": 0
+  },
+
+  "cache": {
+    "session_ttl": 259200
+  },
+
+  "jwt": {
+    "secret": "super-secret-key",
+    "access_token_expired": 900,
+    "refresh_token_expired": 2592000
+  },
+
+  "rate_limit": {
+    "login": {
+      "max_attempts": 10,
+      "window": 300
+    },
+
+    "register": {
+      "max_attempts": 5,
+      "window": 3600
+    }
+  }
+}
