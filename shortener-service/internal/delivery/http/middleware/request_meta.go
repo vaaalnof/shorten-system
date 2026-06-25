@@ -1,0 +1,89 @@
+package middleware
+
+import (
+	"context"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+type RequestMeta struct {
+	Auth      string
+	UserID    string
+	SessionID string
+
+	Referer   string
+	UserAgent string
+	IPAddress string
+}
+
+type key string
+
+const requestKey key = "request_meta"
+
+func getLocalString(
+	c *fiber.Ctx,
+	k string,
+) string {
+
+	if v, ok := c.Locals(
+		k,
+	).(string); ok {
+
+		return v
+	}
+
+	return ""
+}
+
+func FromFiber(
+	c *fiber.Ctx,
+) *RequestMeta {
+
+	return &RequestMeta{
+		Auth: getLocalString(
+			c,
+			"authorization",
+		),
+
+		Referer: getLocalString(
+			c,
+			"referer",
+		),
+
+		UserAgent: getLocalString(
+			c,
+			"user_agent",
+		),
+
+		IPAddress: getLocalString(
+			c,
+			"ip_address",
+		),
+	}
+}
+
+func WithMeta(
+	ctx context.Context,
+	meta *RequestMeta,
+) context.Context {
+
+	return context.WithValue(
+		ctx,
+		requestKey,
+		meta,
+	)
+}
+
+func GetMeta(
+	ctx context.Context,
+) *RequestMeta {
+
+	if v, ok := ctx.Value(
+		requestKey,
+	).(*RequestMeta); ok {
+
+		return v
+	}
+
+	return nil
+}

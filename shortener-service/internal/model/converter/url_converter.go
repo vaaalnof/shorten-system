@@ -7,61 +7,24 @@ import (
 )
 
 // =====================================================
-// CREATE
+// CREATE URL
 // =====================================================
 
-func ToCreateURLResponse(
+func ToAddURLResponse(
 	url *entity.URL,
-) *model.CreateURLResponse {
+) *model.AddURLResponse {
 
-	return &model.CreateURLResponse{
-		ID:          url.ID,
-		ShortCode:   url.ShortCode,
-		OriginalURL: url.OriginalURL,
-		IsActive:    url.IsActive,
-		ClickCount:  url.ClickCount,
-		ExpiredAt:   url.ExpiredAt,
-		Passworded:  url.PasswordHash != nil,
+	return &model.AddURLResponse{
+		ID: url.ID,
 		CreatedAt: utils.FormatUnixTime(
 			url.CreatedAt,
-			"2006-01-02 15:04:05",
-		),
-		UpdatedAt: utils.FormatUnixTime(
-			url.UpdatedAt,
 			"2006-01-02 15:04:05",
 		),
 	}
 }
 
 // =====================================================
-// UPDATE
-// =====================================================
-
-func ToUpdateURLResponse(
-	url *entity.URL,
-) *model.UpdateURLResponse {
-
-	return &model.UpdateURLResponse{
-		ID:          url.ID,
-		ShortCode:   url.ShortCode,
-		OriginalURL: url.OriginalURL,
-		IsActive:    url.IsActive,
-		ClickCount:  url.ClickCount,
-		ExpiredAt:   url.ExpiredAt,
-		Passworded:  url.PasswordHash != nil,
-		CreatedAt: utils.FormatUnixTime(
-			url.CreatedAt,
-			"2006-01-02 15:04:05",
-		),
-		UpdatedAt: utils.FormatUnixTime(
-			url.UpdatedAt,
-			"2006-01-02 15:04:05",
-		),
-	}
-}
-
-// =====================================================
-// DETAIL
+// GET URL
 // =====================================================
 
 func ToURLResponse(
@@ -70,12 +33,12 @@ func ToURLResponse(
 
 	return &model.URLResponse{
 		ID:          url.ID,
+		UserID:      url.UserID,
 		ShortCode:   url.ShortCode,
 		OriginalURL: url.OriginalURL,
 		IsActive:    url.IsActive,
-		ClickCount:  url.ClickCount,
+		HasPassword: url.PasswordHash != nil,
 		ExpiredAt:   url.ExpiredAt,
-		Passworded:  url.PasswordHash != nil,
 		CreatedAt: utils.FormatUnixTime(
 			url.CreatedAt,
 			"2006-01-02 15:04:05",
@@ -88,20 +51,56 @@ func ToURLResponse(
 }
 
 // =====================================================
-// LIST
+// UPDATE PASSWORD
 // =====================================================
 
-func ToURLListResponse(
+func ToUpdateURLPasswordResponse(
 	url *entity.URL,
-) *model.URLListResponse {
+) *model.UpdateURLPasswordResponse {
 
-	return &model.URLListResponse{
+	return &model.UpdateURLPasswordResponse{
+		ID: url.ID,
+		UpdatedAt: utils.FormatUnixTime(
+			url.UpdatedAt,
+			"2006-01-02 15:04:05",
+		),
+	}
+
+}
+
+// =====================================================
+// UPDATE STATUS
+// =====================================================
+
+func ToUpdateURLStatusResponse(
+	url *entity.URL,
+) *model.UpdateURLStatusResponse {
+
+	return &model.UpdateURLStatusResponse{
+		ID:       url.ID,
+		IsActive: url.IsActive,
+		UpdatedAt: utils.FormatUnixTime(
+			url.UpdatedAt,
+			"2006-01-02 15:04:05",
+		),
+	}
+}
+
+// =====================================================
+// LIST URLS
+// =====================================================
+
+func ToListURLResponse(
+	url *entity.URL,
+) *model.ListURLResponse {
+
+	return &model.ListURLResponse{
 		ID:          url.ID,
 		ShortCode:   url.ShortCode,
 		OriginalURL: url.OriginalURL,
 		IsActive:    url.IsActive,
-		ClickCount:  url.ClickCount,
-		Passworded:  url.PasswordHash != nil,
+		HasPassword: url.PasswordHash != nil,
+		ExpiredAt:   url.ExpiredAt,
 		CreatedAt: utils.FormatUnixTime(
 			url.CreatedAt,
 			"2006-01-02 15:04:05",
@@ -113,16 +112,12 @@ func ToURLListResponse(
 	}
 }
 
-// =====================================================
-// LIST MANY
-// =====================================================
-
-func ToURLListResponses(
+func ToListURLResponses(
 	urls []*entity.URL,
-) []*model.URLListResponse {
+) []*model.ListURLResponse {
 
 	responses := make(
-		[]*model.URLListResponse,
+		[]*model.ListURLResponse,
 		0,
 		len(urls),
 	)
@@ -131,9 +126,7 @@ func ToURLListResponses(
 
 		responses = append(
 			responses,
-			ToURLListResponse(
-				url,
-			),
+			ToListURLResponse(url),
 		)
 	}
 
@@ -141,40 +134,35 @@ func ToURLListResponses(
 }
 
 // =====================================================
-// DELETE
+// DELETE URL
 // =====================================================
 
 func ToDeleteURLResponse(
-	id string,
+	url *entity.URL,
 ) *model.DeleteURLResponse {
 
 	return &model.DeleteURLResponse{
-		ID: id,
+		ID: url.ID,
+		UpdatedAt: utils.FormatUnixTime(
+			url.UpdatedAt,
+			"2006-01-02 15:04:05",
+		),
 	}
 }
 
 // =====================================================
-// RESTORE
+// UPDATE URL
 // =====================================================
 
-func ToRestoreURLResponse(
-	id string,
-) *model.RestoreURLResponse {
+func ToUpdateURLResponse(
+	url *entity.URL,
+) *model.UpdateURLResponse {
 
-	return &model.RestoreURLResponse{
-		ID: id,
-	}
-}
-
-// =====================================================
-// REDIRECT
-// =====================================================
-
-func ToRedirectResponse(
-	originalURL string,
-) *model.RedirectResponse {
-
-	return &model.RedirectResponse{
-		OriginalURL: originalURL,
+	return &model.UpdateURLResponse{
+		ID: url.ID,
+		UpdatedAt: utils.FormatUnixTime(
+			url.UpdatedAt,
+			"2006-01-02 15:04:05",
+		),
 	}
 }

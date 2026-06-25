@@ -1,6 +1,8 @@
 package exception
 
 import (
+	"errors"
+
 	"github.com/go-playground/validator/v10"
 )
 
@@ -8,15 +10,18 @@ func Validation(
 	err error,
 ) error {
 
-	validationErrors, ok := err.(validator.ValidationErrors)
+	var validationErrors validator.ValidationErrors
 
-	if !ok {
+	if !errors.As(
+		err,
+		&validationErrors,
+	) {
 		return BadRequest(
 			"validation failed",
 		)
 	}
 
-	errors := make(
+	errorsMap := make(
 		map[string]string,
 	)
 
@@ -28,48 +33,36 @@ func Validation(
 
 		case "required":
 
-			errors[field] =
+			errorsMap[field] =
 				field + " is required"
 
-		case "url":
+		case "shorturl":
 
-			errors[field] =
-				"invalid url format"
-
-		case "uuid":
-
-			errors[field] =
-				"invalid uuid format"
+			errorsMap[field] =
+				field + " must be a valid shorturl"
 
 		case "min":
 
-			errors[field] =
+			errorsMap[field] =
 				field +
 					" minimum length is " +
 					e.Param()
 
 		case "max":
 
-			errors[field] =
+			errorsMap[field] =
 				field +
 					" maximum length is " +
 					e.Param()
 
-		case "oneof":
-
-			errors[field] =
-				field +
-					" must be one of: " +
-					e.Param()
-
 		default:
 
-			errors[field] =
+			errorsMap[field] =
 				"invalid value"
 		}
 	}
 
 	return ValidationError(
-		errors,
+		errorsMap,
 	)
 }

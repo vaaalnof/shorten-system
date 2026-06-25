@@ -256,8 +256,8 @@ VALUES
     ('user'),
     ('users'),
 
-    -- url routes
-    ('url'),
+    -- shorturl routes
+    ('shorturl'),
     ('urls'),
     ('link'),
     ('links'),
@@ -428,238 +428,132 @@ CREATE INDEX idx_urls_user_deleted
 CREATE INDEX idx_urls_user_created
     ON urls(user_id, created_at);
 
-
-
-
-
-
-
-
--- ==================================================================================================================
-
-
-
--- =========================================================
--- COMMENTED FOR NEXT PHASE
--- URL SHORTENER DOMAIN
--- =========================================================
-
-
-/*
-
--- =========================================================
--- RESERVED ALIASES
--- =========================================================
-
-CREATE TABLE reserved_aliases (
-    id BIGSERIAL PRIMARY KEY,
-    keyword VARCHAR(100) NOT NULL UNIQUE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
-
-INSERT INTO reserved_aliases(keyword)
-VALUES
-    ('api'),
-    ('admin'),
-    ('login'),
-    ('logout'),
-    ('register'),
-    ('dashboard'),
-    ('settings'),
-    ('metrics'),
-    ('health'),
-    ('docs'),
-    ('swagger'),
-    ('graphql'),
-    ('favicon.ico'),
-    ('robots.txt');
-
-
--- =========================================================
--- URLS
--- =========================================================
-
-CREATE TABLE urls (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-    user_id UUID
-        REFERENCES users(id)
-        ON DELETE CASCADE,
-
-    short_code VARCHAR(32) NOT NULL UNIQUE,
-
-    original_url TEXT NOT NULL,
-
-    title TEXT,
-
-    is_custom BOOLEAN NOT NULL DEFAULT FALSE,
-
-    click_count BIGINT NOT NULL DEFAULT 0,
-
-    password_hash TEXT,
-
-    expired_at TIMESTAMP,
-
-    deleted_at TIMESTAMP,
-
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
-
--- =========================================================
--- URL INDEXES
--- =========================================================
-
-CREATE UNIQUE INDEX idx_urls_short_code
-ON urls(short_code);
-
-CREATE INDEX idx_urls_user_id
-ON urls(user_id);
-
-CREATE INDEX idx_urls_created_at
-ON urls(created_at);
-
-CREATE INDEX idx_urls_expired_at
-ON urls(expired_at);
-
-CREATE INDEX idx_urls_deleted_at
-ON urls(deleted_at);
-
-
 -- =========================================================
 -- ANALYTICS EVENTS
 -- RAW CLICK EVENTS
+-- SOURCE OF TRUTH
 -- =========================================================
 
 CREATE TABLE analytics_events (
     id BIGSERIAL PRIMARY KEY,
-
-    url_id UUID
-        REFERENCES urls(id)
+    url_id UUID NOT NULL
+        EFERENCES urls(id)
         ON DELETE CASCADE,
 
-    short_code VARCHAR(32) NOT NULL,
+                                  short_code VARCHAR(32) NOT NULL,
 
-    ip_address INET,
+                                  referer TEXT,
+                                  source VARCHAR(100),
 
-    country VARCHAR(100),
+                                  ip_address INET,
+                                  user_agent TEXT,
 
-    city VARCHAR(100),
+                                  browser VARCHAR(50),
+                                  os VARCHAR(50),
+                                  device VARCHAR(50),
 
-    device VARCHAR(50),
+                                  country VARCHAR(100),
 
-    os VARCHAR(50),
+                                  clicked_at BIGINT NOT NULL,
 
-    browser VARCHAR(50),
-
-    referer TEXT,
-
-    source VARCHAR(100),
-
-    user_agent TEXT,
-
-    clicked_at TIMESTAMP NOT NULL DEFAULT NOW()
+                                  created_at BIGINT NOT NULL
+                                      DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT
 );
 
+-- =========================================================
+-- ANALYTICS EVENTS INDEXES
+-- =========================================================
+
+CREATE INDEX idx_analytics_events_url_id
+    ON analytics_events(url_id);
+
+CREATE INDEX idx_analytics_events_clicked_at
+    ON analytics_events(clicked_at);
+
+CREATE INDEX idx_analytics_events_url_clicked
+    ON analytics_events(
+                        url_id,
+                        clicked_at
+        );
 
 -- =========================================================
--- ANALYTICS INDEXES
+-- URL DAILY VISITORS
+-- UNIQUE VISITOR DEDUP
+-- FILLED BY WORKER
 -- =========================================================
 
-CREATE INDEX idx_analytics_url_id
-ON analytics_events(url_id);
+CREATE TABLE url_daily_visitors (
+                                    id BIGSERIAL PRIMARY KEY,
 
-CREATE INDEX idx_analytics_short_code
-ON analytics_events(short_code);
+                                    url_id UUID NOT NULL
+                                        REFERENCES urls(id)
+                                            ON DELETE CASCADE,
 
-CREATE INDEX idx_analytics_clicked_at
-ON analytics_events(clicked_at);
+                                    analytics_date BIGINT NOT NULL,
 
-CREATE INDEX idx_analytics_country
-ON analytics_events(country);
+                                    visitor_hash VARCHAR(64) NOT NULL,
 
-CREATE INDEX idx_analytics_source
-ON analytics_events(source);
+                                    created_at BIGINT NOT NULL
+                                        DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
 
+                                    CONSTRAINT uq_url_daily_visitors
+                                        UNIQUE (
+                                                url_id,
+                                                analytics_date,
+                                                visitor_hash
+                                            )
+);
 
 -- =========================================================
--- DAILY STATS
+-- URL DAILY VISITORS INDEXES
+-- =========================================================
+
+CREATE INDEX idx_url_daily_visitors_url_id
+    ON url_daily_visitors(url_id);
+
+CREATE INDEX idx_url_daily_visitors_date
+    ON url_daily_visitors(analytics_date);
+
+-- =========================================================
+-- URL DAILY ANALYTICS
 -- AGGREGATED ANALYTICS
+-- FILLED BY WORKER
 -- =========================================================
 
-CREATE TABLE url_daily_stats (
-    id BIGSERIAL PRIMARY KEY,
+CREATE TABLE url_daily_analytics (
+                                     id BIGSERIAL PRIMARY KEY,
 
-    url_id UUID
-        REFERENCES urls(id)
-        ON DELETE CASCADE,
+                                     url_id UUID NOT NULL
+                                         REFERENCES urls(id)
+                                             ON DELETE CASCADE,
 
-    stat_date DATE NOT NULL,
+                                     analytics_date BIGINT NOT NULL,
 
-    total_clicks BIGINT NOT NULL DEFAULT 0,
+                                     total_clicks BIGINT NOT NULL
+                                         DEFAULT 0,
 
-    mobile_clicks BIGINT NOT NULL DEFAULT 0,
+                                     unique_visitors BIGINT NOT NULL
+                                         DEFAULT 0,
 
-    desktop_clicks BIGINT NOT NULL DEFAULT 0,
+                                     created_at BIGINT NOT NULL
+                                         DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
 
-    tablet_clicks BIGINT NOT NULL DEFAULT 0,
+                                     updated_at BIGINT NOT NULL
+                                         DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
 
-    indonesia_clicks BIGINT NOT NULL DEFAULT 0,
-
-    us_clicks BIGINT NOT NULL DEFAULT 0,
-
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-
-    UNIQUE(url_id, stat_date)
+                                     CONSTRAINT uq_url_daily_analytics
+                                         UNIQUE (
+                                                 url_id,
+                                                 analytics_date
+                                             )
 );
 
-
 -- =========================================================
--- DAILY STATS INDEXES
--- =========================================================
-
-CREATE INDEX idx_url_daily_stats_url_id
-ON url_daily_stats(url_id);
-
-CREATE INDEX idx_url_daily_stats_date
-ON url_daily_stats(stat_date);
-
-
--- =========================================================
--- API KEYS
--- OPTIONAL PUBLIC API ACCESS
+-- URL DAILY ANALYTICS INDEXES
 -- =========================================================
 
-CREATE TABLE api_keys (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+CREATE INDEX idx_url_daily_analytics_url_id
+    ON url_daily_analytics(url_id);
 
-    user_id UUID
-        REFERENCES users(id)
-        ON DELETE CASCADE,
-
-    api_key TEXT NOT NULL UNIQUE,
-
-    name VARCHAR(255),
-
-    last_used_at TIMESTAMP,
-
-    expired_at TIMESTAMP,
-
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
-
--- =========================================================
--- API KEY INDEXES
--- =========================================================
-
-CREATE INDEX idx_api_keys_user_id
-ON api_keys(user_id);
-
-CREATE INDEX idx_api_keys_expired_at
-ON api_keys(expired_at);
-
-*/
+CREATE INDEX idx_url_daily_analytics_date
+    ON url_daily_analytics(analytics_date);

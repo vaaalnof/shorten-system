@@ -29,10 +29,26 @@ services:
     networks:
       - shorten-network
 
+  nats:
+    image: nats:2.10-alpine
+    container_name: shorten-nats
+    restart: always
+    command:
+      - "--js"
+      - "--http_port=8222"
+      - "--store_dir=/data"
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - nats_data:/data
+    networks:
+      - shorten-network
 
 volumes:
   postgres_data:
   redis_data:
+  nats_data:
 
 networks:
   shorten-network:

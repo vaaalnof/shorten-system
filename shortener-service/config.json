@@ -1,0 +1,87 @@
+{
+  "app": {
+    "name": "shortener-service"
+  },
+
+  "web": {
+    "port": 3001,
+    "prefork": false
+  },
+
+  "log": {
+    "level": 6
+  },
+
+  "database": {
+    "master": {
+      "host": "localhost",
+      "port": 5432,
+      "username": "postgres",
+      "password": "postgres",
+      "name": "shorten_db",
+      "sslmode": "disable",
+
+      "pool": {
+        "idle": 10,
+        "max": 100,
+        "lifetime": 300
+      }
+    },
+
+    "slave": {
+      "host": "localhost",
+      "port": 5432,
+      "username": "postgres",
+      "password": "postgres",
+      "name": "shorten_db",
+      "sslmode": "disable",
+
+      "pool": {
+        "idle": 10,
+        "max": 100,
+        "lifetime": 300
+      }
+    }
+  },
+
+  "redis": {
+    "host": "localhost",
+    "port": "6379",
+    "password": "",
+    "db": 0
+  },
+
+  "cache": {
+    "url_ttl_seconds": 300
+  },
+
+  "geoip": {
+    "database_path": "./assets/geoip/GeoLite2-Country.mmdb"
+  },
+
+  "nats": {
+    "url": "nats://localhost:4222",
+    "timeout_seconds": 5,
+    "reconnect_wait_seconds": 2,
+    "max_reconnects": -1,
+    "reconnect_buffer_mb": 8,
+
+    "analytics": {
+      "replicas": 1,
+      "max_deliver": 5,
+      "ack_wait_seconds": 30,
+      "max_age_hours": 168,
+      "fetch_batch": 100,
+      "fetch_timeout_seconds": 5
+    }
+  },
+
+  "auth_service": {
+    "base_url": "http://localhost:3000",
+    "timeout_seconds": 5
+  },
+
+  "shortener": {
+    "base_url": "http://localhost:3001"
+  }
+}

@@ -6,7 +6,6 @@ type URL struct {
 	ShortCode    string
 	OriginalURL  string
 	IsActive     bool
-	ClickCount   int64
 	PasswordHash *string
 	ExpiredAt    *int64
 	DeletedAt    *int64

@@ -1,28 +1,77 @@
 package config
 
 import (
-	"github.com/go-playground/validator/v10"
 	"reflect"
 	"strings"
+
+	"github.com/go-playground/validator/v10"
+
+	validationutil "shortener-service/internal/validation"
 )
 
 func NewValidator() *validator.Validate {
 
-	validate := validator.New()
+	validate := validator.New(
+		validator.WithRequiredStructEnabled(),
+	)
 
-	validate.RegisterTagNameFunc(func(field reflect.StructField) string {
+	// =====================================================
+	// JSON FIELD NAME
+	// =====================================================
 
-		name := strings.Split(
-			field.Tag.Get("json"),
-			",",
-		)[0]
+	validate.RegisterTagNameFunc(
+		func(
+			field reflect.StructField,
+		) string {
 
-		if name == "-" {
-			return ""
-		}
+			name := strings.Split(
+				field.Tag.Get("json"),
+				",",
+			)[0]
 
-		return name
-	})
+			if name == "-" {
+				return ""
+			}
+
+			return name
+		},
+	)
+
+	// =====================================================
+	// CUSTOM VALIDATIONS
+	// =====================================================
+
+	mustRegisterValidation(
+		validate,
+		"shortcode",
+		validationutil.ShortCode,
+	)
+
+	mustRegisterValidation(
+		validate,
+		"shorturl",
+		validationutil.ShortURL,
+	)
 
 	return validate
+}
+
+func mustRegisterValidation(
+	validate *validator.Validate,
+	tag string,
+	fn validator.Func,
+) {
+
+	if err := validate.RegisterValidation(
+		tag,
+		fn,
+	); err != nil {
+
+		panic(
+			"failed to register validation: " +
+				tag +
+				": " +
+				err.Error(),
+		)
+	}
 }

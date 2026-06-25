@@ -22,7 +22,7 @@ type Config struct {
 func (c *Config) Setup() {
 
 	api := c.App.Group(
-		"/api",
+		"/api/v1",
 	)
 
 	c.setupAuthRoute(

@@ -83,6 +83,16 @@ func TooManyRequests(
 	)
 }
 
+func UnprocessableEntity(
+	message string,
+) *AppError {
+
+	return New(
+		fiber.StatusUnprocessableEntity,
+		message,
+	)
+}
+
 func Internal(
 	message string,
 ) *AppError {

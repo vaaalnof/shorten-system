@@ -1,10 +1,13 @@
 package config
 
 import (
+	"errors"
+
 	"shortener-service/internal/exception"
 	"shortener-service/internal/model"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -12,19 +15,17 @@ func NewFiber(
 	config *viper.Viper,
 ) *fiber.App {
 
-	app := fiber.New(
+	return fiber.New(
 		fiber.Config{
 			AppName: config.GetString(
 				"app.name",
 			),
-			ErrorHandler: NewErrorHandler(),
 			Prefork: config.GetBool(
 				"web.prefork",
 			),
+			ErrorHandler: NewErrorHandler(),
 		},
 	)
-
-	return app
 }
 
 func NewErrorHandler() fiber.ErrorHandler {
@@ -38,7 +39,12 @@ func NewErrorHandler() fiber.ErrorHandler {
 		// APP ERROR
 		// =====================================================
 
-		if appErr, ok := err.(*exception.AppError); ok {
+		var appErr *exception.AppError
+
+		if errors.As(
+			err,
+			&appErr,
+		) {
 
 			return ctx.Status(
 				appErr.StatusCode,
@@ -54,7 +60,12 @@ func NewErrorHandler() fiber.ErrorHandler {
 		// FIBER ERROR
 		// =====================================================
 
-		if fiberErr, ok := err.(*fiber.Error); ok {
+		var fiberErr *fiber.Error
+
+		if errors.As(
+			err,
+			&fiberErr,
+		) {
 
 			return ctx.Status(
 				fiberErr.Code,
@@ -64,6 +75,22 @@ func NewErrorHandler() fiber.ErrorHandler {
 				},
 			)
 		}
+
+		// =====================================================
+		// UNHANDLED ERROR
+		// =====================================================
+
+		logrus.WithError(
+			err,
+		).WithFields(
+			logrus.Fields{
+				"path":   ctx.Path(),
+				"method": ctx.Method(),
+				"ip":     ctx.IP(),
+			},
+		).Error(
+			"unhandled error",
+		)
 
 		// =====================================================
 		// INTERNAL SERVER ERROR
