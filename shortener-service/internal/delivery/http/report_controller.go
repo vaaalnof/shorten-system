@@ -163,3 +163,57 @@ func (c *ReportController) Devices(
 		response,
 	)
 }
+
+// =====================================================
+// REPORT BROWSERS
+// =====================================================
+
+func (c *ReportController) Browsers(
+	ctx *fiber.Ctx,
+) error {
+
+	request := &model.GetReportBrowsersRequest{
+		ID: ctx.Params(
+			"id",
+		),
+	}
+
+	response, err := c.useCase.Browsers(
+		ctx.UserContext(),
+		request,
+	)
+
+	if err != nil {
+
+		return err
+	}
+
+	return ctx.JSON(
+		response,
+	)
+}
+
+// =====================================================
+// TOP LINKS
+// =====================================================
+
+func (c *ReportController) TopLinks(
+	ctx *fiber.Ctx,
+) error {
+
+	request := &model.GetTopLinksRequest{}
+
+	response, err := c.useCase.TopLinks(
+		ctx.UserContext(),
+		request,
+	)
+
+	if err != nil {
+
+		return err
+	}
+
+	return ctx.JSON(
+		response,
+	)
+}

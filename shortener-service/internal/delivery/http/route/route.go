@@ -128,4 +128,14 @@ func (c *Config) Setup() {
 		c.ReportController.Devices,
 	)
 
+	reports.Get(
+		"/:id/browsers",
+		c.ReportController.Browsers,
+	)
+
+	reports.Get(
+		"/top-links",
+		c.ReportController.TopLinks,
+	)
+
 }

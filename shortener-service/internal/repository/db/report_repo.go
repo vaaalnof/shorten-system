@@ -264,3 +264,105 @@ func (r *ReportRepo) GetDevices(
 
 	return items, nil
 }
+
+func (r *ReportRepo) GetBrowsers(
+	ctx context.Context,
+	urlID string,
+) (
+	[]*entity.ReportBrowser,
+	error,
+) {
+
+	rows, err := r.repo.Query(
+		ctx,
+		query.GetReportBrowsers,
+		urlID,
+	)
+
+	if err != nil {
+
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var items []*entity.ReportBrowser
+
+	for rows.Next() {
+
+		item := &entity.ReportBrowser{}
+
+		if err := rows.Scan(
+			&item.Browser,
+			&item.Clicks,
+		); err != nil {
+
+			return nil, err
+		}
+
+		items = append(
+			items,
+			item,
+		)
+	}
+
+	if err := rows.Err(); err != nil {
+
+		return nil, err
+	}
+
+	return items, nil
+}
+
+func (r *ReportRepo) GetTopLinks(
+	ctx context.Context,
+	userID string,
+) (
+	[]*entity.TopLink,
+	error,
+) {
+
+	rows, err := r.repo.Query(
+		ctx,
+		query.GetTopLinks,
+		userID,
+	)
+
+	if err != nil {
+
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var items []*entity.TopLink
+
+	for rows.Next() {
+
+		item := &entity.TopLink{}
+
+		if err := rows.Scan(
+			&item.ID,
+			&item.ShortCode,
+			&item.OriginalURL,
+			&item.Clicks,
+			&item.UniqueVisitors,
+			&item.CreatedAt,
+		); err != nil {
+
+			return nil, err
+		}
+
+		items = append(
+			items,
+			item,
+		)
+	}
+
+	if err := rows.Err(); err != nil {
+
+		return nil, err
+	}
+
+	return items, nil
+}

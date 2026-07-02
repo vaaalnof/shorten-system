@@ -3,17 +3,17 @@ package http
 import (
 	"auth-service/internal/delivery/http/middleware"
 	"auth-service/internal/model"
-	"auth-service/internal/usecase"
+	"auth-service/internal/usecase/auth"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type RegisterUserController struct {
-	UseCase *usecase.RegisterUseCase
+	UseCase *auth.RegisterUseCase
 }
 
 func NewRegisterUserController(
-	uc *usecase.RegisterUseCase,
+	uc *auth.RegisterUseCase,
 ) *RegisterUserController {
 	return &RegisterUserController{
 		UseCase: uc,

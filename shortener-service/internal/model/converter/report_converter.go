@@ -142,3 +142,70 @@ func ToReportDevicesResponse(
 		Items: result,
 	}
 }
+
+// =====================================================
+// REPORT BROWSERS
+// =====================================================
+
+func ToReportBrowsersResponse(
+	items []*entity.ReportBrowser,
+) *model.ReportBrowsersResponse {
+
+	result := make(
+		[]*model.ReportBrowserItemResponse,
+		0,
+		len(items),
+	)
+
+	for _, item := range items {
+
+		result = append(
+			result,
+			&model.ReportBrowserItemResponse{
+				Browser: item.Browser,
+				Clicks:  item.Clicks,
+			},
+		)
+	}
+
+	return &model.ReportBrowsersResponse{
+		Items: result,
+	}
+}
+
+// =====================================================
+// TOP LINKS
+// =====================================================
+
+func ToTopLinksResponse(
+	items []*entity.TopLink,
+) *model.TopLinksResponse {
+
+	result := make(
+		[]*model.TopLinkItemResponse,
+		0,
+		len(items),
+	)
+
+	for _, item := range items {
+
+		result = append(
+			result,
+			&model.TopLinkItemResponse{
+				ID:             item.ID,
+				ShortCode:      item.ShortCode,
+				OriginalURL:    item.OriginalURL,
+				Clicks:         item.Clicks,
+				UniqueVisitors: item.UniqueVisitors,
+				CreatedAt: utils.FormatUnixTime(
+					item.CreatedAt,
+					"2006-01-02 15:04:05",
+				),
+			},
+		)
+	}
+
+	return &model.TopLinksResponse{
+		Items: result,
+	}
+}

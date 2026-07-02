@@ -7,9 +7,12 @@ const Namespace = "auth"
 type Key string
 
 const (
-	SessionKeyType           Key = "session"
-	RateLimitLoginKeyType    Key = "rate_limit_login"
-	RateLimitRegisterKeyType Key = "rate_limit_register"
+	SessionKeyType                   Key = "session"
+	RateLimitLoginKeyType            Key = "rate_limit_login"
+	RateLimitRegisterKeyType         Key = "rate_limit_register"
+	EmailVerificationKeyType         Key = "email_verification"
+	EmailVerificationCooldownKeyType Key = "email_verification_cooldown"
+	OAuthStateKeyType                Key = "oauth_state"
 )
 
 func Build(
@@ -78,5 +81,49 @@ func RateLimitRegister(
 	return Build(
 		RateLimitRegisterKeyType,
 		ip,
+	)
+}
+
+// ====================================================
+// EMAIL VERIFICATION
+// ====================================================
+
+func EmailVerification(
+	userID string,
+) string {
+
+	return Build(
+		EmailVerificationKeyType,
+		userID,
+	)
+}
+
+// ====================================================
+// EMAIL VERIFICATION COOLDOWN
+// ====================================================
+
+func EmailVerificationCooldown(
+	userID string,
+) string {
+
+	return Build(
+		EmailVerificationCooldownKeyType,
+		userID,
+	)
+}
+
+// ====================================================
+// OAUTH STATE
+// ====================================================
+
+func OAuthState(
+	provider string,
+	state string,
+) string {
+
+	return Build(
+		OAuthStateKeyType,
+		provider,
+		state,
 	)
 }

@@ -1,14 +1,13 @@
 package port
 
 import (
+	"auth-service/internal/entity"
 	"context"
 	"database/sql"
-
-	"auth-service/internal/entity"
 )
 
 type UserRepository interface {
-	CreateTx(
+	AddUser(
 		ctx context.Context,
 		tx *sql.Tx,
 		user *entity.User,
@@ -19,8 +18,13 @@ type UserRepository interface {
 		email string,
 	) (*entity.User, error)
 
-	FindByID(
+	FindByUserID(
 		ctx context.Context,
 		id string,
 	) (*entity.User, error)
+
+	UpdateEmailVerified(
+		ctx context.Context,
+		userID string,
+	) (int64, error)
 }

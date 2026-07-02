@@ -2,17 +2,17 @@ package http
 
 import (
 	"auth-service/internal/delivery/http/middleware"
-	"auth-service/internal/usecase"
+	"auth-service/internal/usecase/auth"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type ValidateTokenController struct {
-	UseCase *usecase.ValidateTokenUseCase
+	UseCase *auth.ValidateTokenUseCase
 }
 
 func NewValidateTokenController(
-	uc *usecase.ValidateTokenUseCase,
+	uc *auth.ValidateTokenUseCase,
 ) *ValidateTokenController {
 	return &ValidateTokenController{
 		UseCase: uc,

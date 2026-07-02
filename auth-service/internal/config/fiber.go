@@ -5,26 +5,20 @@ import (
 	"auth-service/internal/model"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/spf13/viper"
 )
 
 func NewFiber(
-	config *viper.Viper,
+	cfg WebSettings,
 ) *fiber.App {
 
-	app := fiber.New(
+	return fiber.New(
 		fiber.Config{
-			AppName: config.GetString(
-				"app.name",
-			),
+			AppName: cfg.AppName,
+			Prefork: cfg.Prefork,
+
 			ErrorHandler: NewErrorHandler(),
-			Prefork: config.GetBool(
-				"web.prefork",
-			),
 		},
 	)
-
-	return app
 }
 
 func NewErrorHandler() fiber.ErrorHandler {

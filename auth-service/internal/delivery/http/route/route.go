@@ -10,13 +10,20 @@ import (
 type Config struct {
 	App *fiber.App
 
-	// auth
-	RegisterUserController  *http.RegisterUserController
-	LoginController         *http.LoginController
-	ValidateTokenController *http.ValidateTokenController
-	MeController            *http.MeController
-	RefreshTokenController  *http.RefreshTokenController
-	LogoutController        *http.LogoutController
+	// AUTH
+	RegisterUserController   *http.RegisterUserController
+	LoginController          *http.LoginController
+	GoogleLoginController    *http.GoogleLoginController
+	GoogleCallbackController *http.GoogleCallbackController
+	ValidateTokenController  *http.ValidateTokenController
+	RefreshTokenController   *http.RefreshTokenController
+	LogoutController         *http.LogoutController
+	LogoutAllController      *http.LogoutAllController
+
+	// USER
+	ProfileController                   *http.ProfileController
+	SendEmailVerificationCodeController *http.SendVerificationCodeController
+	VerificationCodeController          *http.VerificationCodeController
 }
 
 func (c *Config) Setup() {
@@ -25,36 +32,43 @@ func (c *Config) Setup() {
 		"/api/v1",
 	)
 
+	auth := api.Group(
+		"/auth",
+	)
+
+	user := api.Group(
+		"/user",
+	)
+
 	c.setupAuthRoute(
-		api,
+		auth,
+	)
+
+	c.setupUserRoute(
+		user,
 	)
 }
 
-// ================= AUTH =================
-func (c *Config) setupAuthRoute(
-	api fiber.Router,
-) {
+// =====================================================
+// AUTH ROUTES
+// =====================================================
 
-	// =====================================================
-	// REGISTER
-	// =====================================================
+func (c *Config) setupAuthRoute(
+	auth fiber.Router,
+) {
 
 	if c.RegisterUserController != nil {
 
-		api.Post(
+		auth.Post(
 			"/register",
 			middleware.RequestContext(),
 			c.RegisterUserController.Handle,
 		)
 	}
 
-	// =====================================================
-	// LOGIN
-	// =====================================================
-
 	if c.LoginController != nil {
 
-		api.Post(
+		auth.Post(
 			"/login",
 			middleware.RequestContext(),
 			c.LoginController.Handle,
@@ -62,53 +76,94 @@ func (c *Config) setupAuthRoute(
 	}
 
 	// =====================================================
-	// VALIDATE
+	// GOOGLE LOGIN
 	// =====================================================
+	if c.GoogleLoginController != nil {
+		auth.Get(
+			"/google",
+			middleware.RequestContext(),
+			c.GoogleLoginController.Handle,
+		)
+	}
+
+	if c.GoogleCallbackController != nil {
+
+		auth.Get(
+			"/google/callback",
+			middleware.RequestContext(),
+			c.GoogleCallbackController.Handle,
+		)
+
+	}
 
 	if c.ValidateTokenController != nil {
-		api.Get(
+
+		auth.Get(
 			"/validate-token",
 			middleware.RequestContext(),
 			c.ValidateTokenController.Handle,
 		)
 	}
 
-	// =====================================================
-	// ME
-	// =====================================================
-
-	if c.MeController != nil {
-
-		api.Get(
-			"/me",
-			middleware.RequestContext(),
-			c.MeController.Handle,
-		)
-	}
-
-	// =====================================================
-	// REFRESH TOKEN
-	// =====================================================
-
 	if c.RefreshTokenController != nil {
 
-		api.Post(
+		auth.Post(
 			"/refresh-token",
 			middleware.RequestContext(),
 			c.RefreshTokenController.Handle,
 		)
 	}
 
-	// =====================================================
-	// REFRESH TOKEN
-	// =====================================================
-
 	if c.LogoutController != nil {
 
-		api.Post(
+		auth.Post(
 			"/logout",
 			middleware.RequestContext(),
 			c.LogoutController.Handle,
+		)
+	}
+
+	if c.LogoutAllController != nil {
+		auth.Post(
+			"/logout-all",
+			middleware.RequestContext(),
+			c.LogoutAllController.Handle,
+		)
+	}
+}
+
+// =====================================================
+// USER ROUTES
+// =====================================================
+
+func (c *Config) setupUserRoute(
+	user fiber.Router,
+) {
+
+	if c.ProfileController != nil {
+
+		user.Get(
+			"/profile",
+			middleware.RequestContext(),
+			c.ProfileController.Handle,
+		)
+	}
+
+	if c.SendEmailVerificationCodeController != nil {
+
+		user.Post(
+			"/email-verification/send",
+			middleware.RequestContext(),
+			c.SendEmailVerificationCodeController.Handle,
+		)
+	}
+
+	if c.VerificationCodeController != nil {
+
+		user.Post(
+			"/email-verification/verify",
+			middleware.RequestContext(),
+			c.VerificationCodeController.Handle,
 		)
 	}
 }

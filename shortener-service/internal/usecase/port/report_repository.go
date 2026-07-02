@@ -10,18 +10,12 @@ type ReportRepository interface {
 	GetSummary(
 		ctx context.Context,
 		urlID string,
-	) (
-		*entity.ReportSummary,
-		error,
-	)
+	) (*entity.ReportSummary, error)
 
 	GetChart(
 		ctx context.Context,
 		urlID string,
-	) (
-		[]*entity.ReportChart,
-		error,
-	)
+	) ([]*entity.ReportChart, error)
 
 	GetReferrers(
 		ctx context.Context,
@@ -37,7 +31,15 @@ type ReportRepository interface {
 		ctx context.Context,
 		urlID string,
 	) (
-		[]*entity.ReportDevice,
-		error,
-	)
+		[]*entity.ReportDevice, error)
+
+	GetBrowsers(
+		ctx context.Context,
+		urlID string,
+	) ([]*entity.ReportBrowser, error)
+
+	GetTopLinks(
+		ctx context.Context,
+		userID string,
+	) ([]*entity.TopLink, error)
 }

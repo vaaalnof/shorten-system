@@ -5,58 +5,32 @@
 
   "web": {
     "port": 3000,
-    "prefork": false
+    "prefork": false,
+
+    "cors": {
+      "allow_methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+      "allow_headers": "Origin,Content-Type,Accept,Authorization",
+      "allow_credentials": true
+    }
   },
 
   "log": {
     "level": 6
   },
 
-  "database": {
-    "master": {
-      "host": "localhost",
-      "port": 5432,
-      "username": "postgres",
-      "password": "postgres",
-      "name": "shorten_db",
-      "sslmode": "disable",
-
-      "pool": {
-        "idle": 10,
-        "max": 100,
-        "lifetime": 300
-      }
-    },
-
-    "slave": {
-      "host": "localhost",
-      "port": 5432,
-      "username": "postgres",
-      "password": "postgres",
-      "name": "shorten_db",
-      "sslmode": "disable",
-
-      "pool": {
-        "idle": 10,
-        "max": 100,
-        "lifetime": 300
-      }
-    }
-  },
-
-  "redis": {
-    "host": "localhost",
-    "port": "6379",
-    "password": "",
-    "db": 0
+  "smtp": {
+    "sender_name": "Shorten System",
+    "sender_email": "noreply@yourapp.com"
   },
 
   "cache": {
-    "session_ttl": 259200
+    "session_ttl": 259200,
+    "email_verification_ttl": 300,
+    "email_verification_cooldown": 60,
+    "oauth_state_ttl": 300
   },
 
   "jwt": {
-    "secret": "super-secret-key",
     "access_token_expired": 900,
     "refresh_token_expired": 2592000
   },

@@ -90,3 +90,40 @@ type ReportDeviceItemResponse struct {
 type ReportDevicesResponse struct {
 	Items []*ReportDeviceItemResponse `json:"items"`
 }
+
+// =====================================================
+// REPORT BROWSERS
+// =====================================================
+
+type GetReportBrowsersRequest struct {
+	ID string `params:"id" validate:"required,uuid"`
+}
+
+type ReportBrowserItemResponse struct {
+	Browser string `json:"browser"`
+	Clicks  int64  `json:"clicks"`
+}
+
+type ReportBrowsersResponse struct {
+	Items []*ReportBrowserItemResponse `json:"items"`
+}
+
+// =====================================================
+// TOP LINKS
+// =====================================================
+
+type GetTopLinksRequest struct {
+}
+
+type TopLinkItemResponse struct {
+	ID             string `json:"id"`
+	ShortCode      string `json:"short_code"`
+	OriginalURL    string `json:"original_url"`
+	Clicks         int64  `json:"clicks"`
+	UniqueVisitors int64  `json:"unique_visitors"`
+	CreatedAt      string `json:"created_at"`
+}
+
+type TopLinksResponse struct {
+	Items []*TopLinkItemResponse `json:"items"`
+}

@@ -3,17 +3,17 @@ package http
 import (
 	"auth-service/internal/delivery/http/middleware"
 	"auth-service/internal/model"
-	"auth-service/internal/usecase"
+	"auth-service/internal/usecase/auth"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type LoginController struct {
-	UseCase *usecase.LoginUseCase
+	UseCase *auth.LoginUseCase
 }
 
 func NewLoginController(
-	uc *usecase.LoginUseCase,
+	uc *auth.LoginUseCase,
 ) *LoginController {
 	return &LoginController{
 		UseCase: uc,

@@ -26,21 +26,25 @@ func NewUserSessionRepo(
 	}
 }
 
-func (r *UserSessionRepo) Create(
+func (r *UserSessionRepo) AddSession(
 	ctx context.Context,
 	session *entity.UserSession,
 ) error {
 
-	session.CreatedAt = time.Now().Unix()
+	now := time.Now().Unix()
+
+	session.CreatedAt = now
+	session.LastSeenAt = now
 
 	_, err := r.repo.Exec(
 		ctx,
-		query.UserSessionCreate,
+		query.AddSession,
 		session.ID,
 		session.UserID,
 		session.RefreshToken,
 		session.IPAddress,
 		session.UserAgent,
+		session.LastSeenAt,
 		session.ExpiredAt,
 		session.RevokedAt,
 		session.CreatedAt,
@@ -49,30 +53,14 @@ func (r *UserSessionRepo) Create(
 	return err
 }
 
-func (r *UserSessionRepo) FindByID(
+func (r *UserSessionRepo) FindSessionByID(
 	ctx context.Context,
 	id string,
 ) (*entity.UserSession, error) {
 
 	row := r.repo.QueryRow(
 		ctx,
-		query.UserSessionFindByID,
-		id,
-	)
-
-	return scanUserSession(
-		row,
-	)
-}
-
-func (r *UserSessionRepo) FindValidByID(
-	ctx context.Context,
-	id string,
-) (*entity.UserSession, error) {
-
-	row := r.repo.QueryRow(
-		ctx,
-		query.UserSessionFindValidByID,
+		query.FindSessionByID,
 		id,
 		time.Now().Unix(),
 	)
@@ -80,6 +68,58 @@ func (r *UserSessionRepo) FindValidByID(
 	return scanUserSession(
 		row,
 	)
+}
+
+func (r *UserSessionRepo) FindSessionByUserID(
+	ctx context.Context,
+	userID string,
+) ([]*entity.UserSession, error) {
+
+	rows, err := r.repo.Query(
+		ctx,
+		query.FindSessionByUserID,
+		userID,
+		time.Now().Unix(),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var sessions []*entity.UserSession
+
+	for rows.Next() {
+
+		session := &entity.UserSession{}
+
+		err := rows.Scan(
+			&session.ID,
+			&session.UserID,
+			&session.RefreshToken,
+			&session.IPAddress,
+			&session.UserAgent,
+			&session.ExpiredAt,
+			&session.RevokedAt,
+			&session.CreatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		sessions = append(
+			sessions,
+			session,
+		)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return sessions, nil
 }
 
 func (r *UserSessionRepo) UpdateRefreshToken(
@@ -90,15 +130,16 @@ func (r *UserSessionRepo) UpdateRefreshToken(
 
 	_, err := r.repo.Exec(
 		ctx,
-		query.UserSessionUpdateRefreshToken,
+		query.UpdateRefreshToken,
 		refreshToken,
+		time.Now().Unix(),
 		sessionID,
 	)
 
 	return err
 }
 
-func (r *UserSessionRepo) Revoke(
+func (r *UserSessionRepo) RevokeByID(
 	ctx context.Context,
 	id string,
 	revokedAt int64,
@@ -106,9 +147,25 @@ func (r *UserSessionRepo) Revoke(
 
 	_, err := r.repo.Exec(
 		ctx,
-		query.UserSessionRevoke,
+		query.RevokeByID,
 		revokedAt,
 		id,
+	)
+
+	return err
+}
+
+func (r *UserSessionRepo) RevokeByUserID(
+	ctx context.Context,
+	userID string,
+	revokedAt int64,
+) error {
+
+	_, err := r.repo.Exec(
+		ctx,
+		query.RevokeByUserID,
+		revokedAt,
+		userID,
 	)
 
 	return err

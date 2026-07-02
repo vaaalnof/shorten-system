@@ -1,52 +1,27 @@
 package config
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/spf13/viper"
 )
 
 type Settings struct {
-
-	// =====================================================
-	// AUTH SERVICE
-	// =====================================================
-
 	AuthServiceBaseURL string
-
 	AuthServiceTimeout time.Duration
-
-	// =====================================================
-	// CACHE
-	// =====================================================
 
 	URLCacheTTL time.Duration
 
-	// =====================================================
-	// SHORTENER
-	// =====================================================
 	ShortenerBaseURL string
-
-	// =====================================================
-	// GEO IP
-	// =====================================================
 
 	GeoIPDatabasePath string
 
-	// =====================================================
-	// ANALYTICS (NATS)
-	// =====================================================
-
-	NATSAnalyticsReplicas int
-
-	NATSAnalyticsMaxDeliver int
-
-	NATSAnalyticsAckWait time.Duration
-
-	NATSAnalyticsMaxAge time.Duration
-
-	NATSAnalyticsFetchBatch int
-
+	NATSAnalyticsReplicas     int
+	NATSAnalyticsMaxDeliver   int
+	NATSAnalyticsAckWait      time.Duration
+	NATSAnalyticsMaxAge       time.Duration
+	NATSAnalyticsFetchBatch   int
 	NATSAnalyticsFetchTimeout time.Duration
 }
 
@@ -55,78 +30,147 @@ func NewSettings(
 ) *Settings {
 
 	return &Settings{
-
-		// =====================================================
-		// AUTH SERVICE
-		// =====================================================
-
-		AuthServiceBaseURL: v.GetString(
+		AuthServiceBaseURL: requiredString(
+			v,
 			"auth_service.base_url",
 		),
 
-		AuthServiceTimeout: time.Duration(
-			v.GetInt(
-				"auth_service.timeout_seconds",
-			),
-		) * time.Second,
+		AuthServiceTimeout: durationFromSeconds(
+			v,
+			"auth_service.timeout_seconds",
+		),
 
-		// =====================================================
-		// CACHE
-		// =====================================================
+		URLCacheTTL: durationFromSeconds(
+			v,
+			"cache.url_ttl_seconds",
+		),
 
-		URLCacheTTL: time.Duration(
-			v.GetInt(
-				"cache.url_ttl_seconds",
-			),
-		) * time.Second,
-
-		// =====================================================
-		// SHORTENER
-		// =====================================================
-		ShortenerBaseURL: v.GetString(
+		ShortenerBaseURL: requiredString(
+			v,
 			"shortener.base_url",
 		),
 
-		// =====================================================
-		// GEO IP
-		// =====================================================
-
-		GeoIPDatabasePath: v.GetString(
+		GeoIPDatabasePath: requiredString(
+			v,
 			"geoip.database_path",
 		),
 
-		// =====================================================
-		// NATS ANALYTICS
-		// =====================================================
-
-		NATSAnalyticsReplicas: v.GetInt(
+		NATSAnalyticsReplicas: requiredInt(
+			v,
 			"nats.analytics.replicas",
 		),
 
-		NATSAnalyticsMaxDeliver: v.GetInt(
+		NATSAnalyticsMaxDeliver: requiredInt(
+			v,
 			"nats.analytics.max_deliver",
 		),
 
-		NATSAnalyticsAckWait: time.Duration(
-			v.GetInt(
-				"nats.analytics.ack_wait_seconds",
-			),
-		) * time.Second,
+		NATSAnalyticsAckWait: durationFromSeconds(
+			v,
+			"nats.analytics.ack_wait_seconds",
+		),
 
-		NATSAnalyticsMaxAge: time.Duration(
-			v.GetInt(
-				"nats.analytics.max_age_hours",
-			),
-		) * time.Hour,
+		NATSAnalyticsMaxAge: durationFromHours(
+			v,
+			"nats.analytics.max_age_hours",
+		),
 
-		NATSAnalyticsFetchBatch: v.GetInt(
+		NATSAnalyticsFetchBatch: requiredInt(
+			v,
 			"nats.analytics.fetch_batch",
 		),
 
-		NATSAnalyticsFetchTimeout: time.Duration(
-			v.GetInt(
-				"nats.analytics.fetch_timeout_seconds",
-			),
-		) * time.Second,
+		NATSAnalyticsFetchTimeout: durationFromSeconds(
+			v,
+			"nats.analytics.fetch_timeout_seconds",
+		),
 	}
+}
+
+func durationFromSeconds(
+	v *viper.Viper,
+	key string,
+) time.Duration {
+
+	value := v.GetInt(
+		key,
+	)
+
+	if value <= 0 {
+		panic(
+			fmt.Sprintf(
+				"invalid config: %s",
+				key,
+			),
+		)
+	}
+
+	return time.Duration(
+		value,
+	) * time.Second
+}
+
+func durationFromHours(
+	v *viper.Viper,
+	key string,
+) time.Duration {
+
+	value := v.GetInt(
+		key,
+	)
+
+	if value <= 0 {
+		panic(
+			fmt.Sprintf(
+				"invalid config: %s",
+				key,
+			),
+		)
+	}
+
+	return time.Duration(
+		value,
+	) * time.Hour
+}
+
+func requiredString(
+	v *viper.Viper,
+	key string,
+) string {
+
+	value := v.GetString(
+		key,
+	)
+
+	if value == "" {
+		panic(
+			fmt.Sprintf(
+				"missing config: %s",
+				key,
+			),
+		)
+	}
+
+	return value
+}
+
+func requiredInt(
+	v *viper.Viper,
+	key string,
+) int {
+
+	value := v.GetInt(
+		key,
+	)
+
+	if value <= 0 {
+		panic(
+			fmt.Sprintf(
+				"invalid config: %s",
+				key,
+			),
+		)
+	}
+
+	return value
 }

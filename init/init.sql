@@ -19,6 +19,7 @@ CREATE TABLE users (
         DEFAULT TRUE,
     email_verified BOOLEAN NOT NULL
         DEFAULT FALSE,
+    email_verified_at BIGINT NULL,
     created_at BIGINT NOT NULL
         DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
     updated_at BIGINT NOT NULL
@@ -86,6 +87,8 @@ CREATE TABLE user_sessions (
     refresh_token TEXT NOT NULL UNIQUE,
     ip_address INET,
     user_agent TEXT,
+    last_seen_at BIGINT NOT NULL
+        DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
     expired_at BIGINT NOT NULL,
     revoked_at BIGINT,
     created_at BIGINT NOT NULL
@@ -93,9 +96,7 @@ CREATE TABLE user_sessions (
 );
 
 -- =========================================================
-
 -- SESSION INDEXES
-
 -- =========================================================
 
 CREATE INDEX idx_sessions_user_id
@@ -256,8 +257,8 @@ VALUES
     ('user'),
     ('users'),
 
-    -- shorturl routes
-    ('shorturl'),
+    -- url routes
+    ('url'),
     ('urls'),
     ('link'),
     ('links'),
@@ -436,28 +437,19 @@ CREATE INDEX idx_urls_user_created
 
 CREATE TABLE analytics_events (
     id BIGSERIAL PRIMARY KEY,
-    url_id UUID NOT NULL
-        EFERENCES urls(id)
-        ON DELETE CASCADE,
-
-                                  short_code VARCHAR(32) NOT NULL,
-
-                                  referer TEXT,
-                                  source VARCHAR(100),
-
-                                  ip_address INET,
-                                  user_agent TEXT,
-
-                                  browser VARCHAR(50),
-                                  os VARCHAR(50),
-                                  device VARCHAR(50),
-
-                                  country VARCHAR(100),
-
-                                  clicked_at BIGINT NOT NULL,
-
-                                  created_at BIGINT NOT NULL
-                                      DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT
+    url_id UUID NOT NULL REFERENCES urls(id) ON DELETE CASCADE,
+    short_code VARCHAR(32) NOT NULL,
+    referer TEXT,
+    source VARCHAR(100),
+    ip_address INET,
+    user_agent TEXT,
+    browser VARCHAR(50),
+    os VARCHAR(50),
+    device VARCHAR(50),
+    country VARCHAR(100),
+    clicked_at BIGINT NOT NULL,
+    created_at BIGINT NOT NULL
+        DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT
 );
 
 -- =========================================================

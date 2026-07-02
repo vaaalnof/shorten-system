@@ -5,7 +5,6 @@ type AuthProvider string
 const (
 	AuthProviderLocal  AuthProvider = "local"
 	AuthProviderGoogle AuthProvider = "google"
-	AuthProviderGithub AuthProvider = "github"
 )
 
 type UserAuthProvider struct {

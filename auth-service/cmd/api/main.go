@@ -1,20 +1,27 @@
 package main
 
 import (
-	"auth-service/internal/config"
-	"auth-service/internal/delivery/http"
-	"auth-service/internal/delivery/http/route"
-	cacheinfra "auth-service/internal/infra/cache"
-	"auth-service/internal/repository"
-	dbrepo "auth-service/internal/repository/db"
-	"auth-service/internal/security"
-	"auth-service/internal/usecase"
 	"context"
 	"fmt"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"auth-service/internal/config"
+	"auth-service/internal/delivery/http"
+	"auth-service/internal/delivery/http/route"
+	cacheinfra "auth-service/internal/infra/cache"
+	mailinfra "auth-service/internal/infra/mail"
+	"auth-service/internal/repository"
+	dbrepo "auth-service/internal/repository/db"
+	"auth-service/internal/security"
+	"auth-service/internal/usecase/auth"
+	"auth-service/internal/usecase/user"
 )
 
 func main() {
@@ -23,44 +30,62 @@ func main() {
 	// BASE CONFIG
 	// =====================================================
 
-	viperConfig := config.NewViper()
+	v := config.NewViper()
 
 	settings := config.NewSettings(
-		viperConfig,
+		v,
 	)
 
 	log := config.NewLogger(
-		viperConfig,
+		settings.Log,
 	)
 
 	db := config.NewDatabase(
-		viperConfig,
+		settings.Database,
 		log,
 	)
 
 	redis := config.NewRedisClient(
-		viperConfig,
+		settings.Redis,
+		log,
+	)
+
+	smtpConfig := config.NewSMTPConfig(
+		settings.SMTP,
 		log,
 	)
 
 	validate := config.NewValidator()
 
 	app := config.NewFiber(
-		viperConfig,
+		settings.Web,
 	)
 
-	// =====================================================
-	// BOOTSTRAP
-	// =====================================================
+	app.Use(
+		recover.New(),
+	)
 
-	config.Bootstrap(&config.BootstrapConfig{
-		DB:       db,
-		Redis:    redis,
-		App:      app,
-		Log:      log,
-		Validate: validate,
-		Config:   viperConfig,
-	})
+	app.Use(
+		logger.New(),
+	)
+
+	app.Use(
+		requestid.New(),
+	)
+
+	app.Use(
+		cors.New(
+			cors.Config{
+				AllowOrigins: settings.Web.CORS.AllowOrigins,
+
+				AllowMethods: settings.Web.CORS.AllowMethods,
+
+				AllowHeaders: settings.Web.CORS.AllowHeaders,
+
+				AllowCredentials: settings.Web.CORS.AllowCredentials,
+			},
+		),
+	)
 
 	// =====================================================
 	// REPOSITORY
@@ -75,6 +100,10 @@ func main() {
 	cache := cacheinfra.NewRedisCache(
 		redis.Client,
 		log,
+	)
+
+	mailer := mailinfra.NewSMTPMailer(
+		smtpConfig,
 	)
 
 	userRepo := dbrepo.NewUserRepo(
@@ -98,9 +127,15 @@ func main() {
 	refreshTokenHash := security.NewRefreshTokenHash()
 
 	jwtService := security.NewJWTService(
-		settings.JWTSecret,
-		settings.AccessTokenTTL,
-		settings.RefreshTokenTTL,
+		settings.JWT.Secret,
+		settings.JWT.AccessTokenTTL,
+		settings.JWT.RefreshTokenTTL,
+	)
+
+	googleOAuth := security.NewGoogleOAuth(
+		settings.Google.ClientID,
+		settings.Google.ClientSecret,
+		settings.Google.RedirectURL,
 	)
 
 	rateLimiter := security.NewRateLimiter(
@@ -108,61 +143,123 @@ func main() {
 	)
 
 	// =====================================================
-	// USECASE
+	// AUTH BASE USECASE
 	// =====================================================
 
-	registerUseCase := usecase.NewRegisterUseCase(
+	accessSessionUseCase := auth.NewAccessSessionUseCase(
+		cache,
+		jwtService,
+	)
+
+	refreshSessionUseCase := auth.NewRefreshSessionUseCase(
+		jwtService,
+	)
+
+	createSession := auth.NewCreateSession(
+		userSessionRepo,
+		cache,
+		refreshTokenHash,
+		jwtService,
+		settings.Cache.SessionTTL,
+	)
+
+	// =====================================================
+	// AUTH USECASE
+	// =====================================================
+
+	registerUseCase := auth.NewRegisterUseCase(
 		baseRepo,
 		validate,
 		userRepo,
 		authProviderRepo,
 		passwordHash,
 		rateLimiter,
-		settings.RegisterMaxAttempts,
-		settings.RegisterWindowTTL,
+		settings.RateLimit.Register.MaxAttempts,
+		settings.RateLimit.Register.Window,
 	)
 
-	loginUseCase := usecase.NewLoginUseCase(
+	loginUseCase := auth.NewLoginUseCase(
 		validate,
 		userRepo,
 		authProviderRepo,
-		userSessionRepo,
-		cache,
+		createSession,
 		passwordHash,
-		refreshTokenHash,
-		jwtService,
 		rateLimiter,
-		settings.LoginMaxAttempts,
-		settings.LoginWindowTTL,
-		settings.SessionTTL,
+		settings.RateLimit.Login.MaxAttempts,
+		settings.RateLimit.Login.Window,
 	)
 
-	validateTokenUseCase := usecase.NewValidateTokenUseCase(
+	googleLoginUseCase := auth.NewGoogleLoginUseCase(
 		cache,
-		jwtService,
+		googleOAuth,
+		settings.Cache.OAuthStateTTL,
 	)
 
-	meUseCase := usecase.NewMeUseCase(
+	googleCallbackUseCase := auth.NewGoogleCallbackUseCase(
+		baseRepo,
+		validate,
 		userRepo,
-		userSessionRepo,
+		authProviderRepo,
+		createSession,
 		cache,
-		jwtService,
-		settings.SessionTTL,
+		googleOAuth,
 	)
 
-	refreshTokenUseCase := usecase.NewRefreshTokenUseCase(
+	validateTokenUseCase := auth.NewValidateTokenUseCase(
+		accessSessionUseCase,
+	)
+
+	refreshTokenUseCase := auth.NewRefreshTokenUseCase(
+		refreshSessionUseCase,
 		userSessionRepo,
 		cache,
-		jwtService,
 		refreshTokenHash,
-		settings.SessionTTL,
+		settings.Cache.SessionTTL,
 	)
 
-	logoutUseCase := usecase.NewLogoutUseCase(
+	logoutUseCase := auth.NewLogoutUseCase(
+		accessSessionUseCase,
 		userSessionRepo,
 		cache,
-		jwtService,
 	)
+
+	logoutAllUseCase := auth.NewLogoutAllUseCase(
+		accessSessionUseCase,
+		userSessionRepo,
+		cache,
+	)
+
+	// =====================================================
+	// USER BASE USECASE
+	// =====================================================
+
+	userUseCase := user.NewUseCase(
+		cache,
+		userSessionRepo,
+		jwtService,
+		settings.Cache.SessionTTL,
+	)
+
+	profileUseCase := user.NewProfileUseCase(
+		userUseCase,
+		userRepo,
+	)
+
+	sendEmailVerificationCodeUseCase :=
+		user.NewSendVerificationCodeUseCase(
+			userUseCase,
+			userRepo,
+			mailer,
+			settings.Cache.EmailVerificationTTL,
+			settings.Cache.EmailVerificationCooldownTTL,
+		)
+
+	verificationCodeUseCase :=
+		user.NewVerificationCodeUseCase(
+			userUseCase,
+			userRepo,
+			cache,
+		)
 
 	// =====================================================
 	// CONTROLLER
@@ -176,12 +273,20 @@ func main() {
 		loginUseCase,
 	)
 
+	googleLoginController := http.NewGoogleLoginController(
+		googleLoginUseCase,
+	)
+
+	googleCallbackController := http.NewGoogleCallbackController(
+		googleCallbackUseCase,
+	)
+
 	validateTokenController := http.NewValidateTokenController(
 		validateTokenUseCase,
 	)
 
-	meController := http.NewMeController(
-		meUseCase,
+	profileController := http.NewProfileController(
+		profileUseCase,
 	)
 
 	refreshTokenController := http.NewRefreshTokenController(
@@ -192,6 +297,20 @@ func main() {
 		logoutUseCase,
 	)
 
+	logoutAllController := http.NewLogoutAllController(
+		logoutAllUseCase,
+	)
+
+	sendEmailVerificationCodeController :=
+		http.NewSendVerificationCodeController(
+			sendEmailVerificationCodeUseCase,
+		)
+
+	verificationCodeController :=
+		http.NewVerificationCodeController(
+			verificationCodeUseCase,
+		)
+
 	// =====================================================
 	// ROUTE
 	// =====================================================
@@ -199,45 +318,29 @@ func main() {
 	routeConfig := route.Config{
 		App: app,
 
-		RegisterUserController:  registerUserController,
-		LoginController:         loginController,
-		ValidateTokenController: validateTokenController,
-		MeController:            meController,
-		RefreshTokenController:  refreshTokenController,
-		LogoutController:        logoutController,
+		// AUTH
+		RegisterUserController:   registerUserController,
+		LoginController:          loginController,
+		GoogleLoginController:    googleLoginController,
+		GoogleCallbackController: googleCallbackController,
+		ValidateTokenController:  validateTokenController,
+		RefreshTokenController:   refreshTokenController,
+		LogoutController:         logoutController,
+		LogoutAllController:      logoutAllController,
+
+		// USER
+		ProfileController:                   profileController,
+		SendEmailVerificationCodeController: sendEmailVerificationCodeController,
+		VerificationCodeController:          verificationCodeController,
 	}
 
 	routeConfig.Setup()
 
 	// =====================================================
-	// KAFKA & WORKER
-	// DISABLED FOR NOW
-	// =====================================================
-
-	// kafkaProducer := config.NewKafkaProducer(
-	// 	viperConfig,
-	// 	log,
-	// )
-
-	// registerConsumer := worker.NewRegisterConsumer(
-	// 	kafkaProducer,
-	// 	log,
-	// )
-
-	// go registerConsumer.Start()
-
-	// =====================================================
 	// SERVER START
 	// =====================================================
 
-	webPort := viperConfig.GetInt(
-		"web.port",
-	)
-
-	addr := fmt.Sprintf(
-		":%d",
-		webPort,
-	)
+	addr := fmt.Sprintf(":%d", settings.Web.Port)
 
 	go func() {
 

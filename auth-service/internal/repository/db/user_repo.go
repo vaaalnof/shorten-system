@@ -25,7 +25,7 @@ func NewUserRepo(
 	}
 }
 
-func (r *UserRepo) CreateTx(
+func (r *UserRepo) AddUser(
 	ctx context.Context,
 	tx *sql.Tx,
 	user *entity.User,
@@ -38,7 +38,7 @@ func (r *UserRepo) CreateTx(
 
 	_, err := tx.ExecContext(
 		ctx,
-		query.UserCreate,
+		query.AddUser,
 		user.ID,
 		user.Email,
 		user.FirstName,
@@ -60,7 +60,7 @@ func (r *UserRepo) FindByEmail(
 
 	row := r.repo.QueryRow(
 		ctx,
-		query.UserFindByEmail,
+		query.FindByEmail,
 		email,
 	)
 
@@ -92,14 +92,14 @@ func (r *UserRepo) FindByEmail(
 	return user, nil
 }
 
-func (r *UserRepo) FindByID(
+func (r *UserRepo) FindByUserID(
 	ctx context.Context,
 	id string,
 ) (*entity.User, error) {
 
 	row := r.repo.QueryRow(
 		ctx,
-		query.UserFindByID,
+		query.FindByUserID,
 		id,
 	)
 
@@ -129,4 +129,26 @@ func (r *UserRepo) FindByID(
 	}
 
 	return user, nil
+}
+
+func (r *UserRepo) UpdateEmailVerified(
+	ctx context.Context,
+	userID string,
+) (int64, error) {
+
+	now := time.Now().Unix()
+
+	_, err := r.repo.Exec(
+		ctx,
+		query.UpdateEmailVerified,
+		now,
+		now,
+		userID,
+	)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return now, nil
 }

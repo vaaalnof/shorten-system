@@ -6,20 +6,20 @@ import (
 )
 
 type UserSessionRepository interface {
-	Create(
+	AddSession(
 		ctx context.Context,
 		session *entity.UserSession,
 	) error
 
-	FindByID(
+	FindSessionByID(
 		ctx context.Context,
 		id string,
 	) (*entity.UserSession, error)
 
-	FindValidByID(
+	FindSessionByUserID(
 		ctx context.Context,
-		id string,
-	) (*entity.UserSession, error)
+		userID string,
+	) ([]*entity.UserSession, error)
 
 	UpdateRefreshToken(
 		ctx context.Context,
@@ -27,9 +27,15 @@ type UserSessionRepository interface {
 		refreshToken string,
 	) error
 
-	Revoke(
+	RevokeByID(
 		ctx context.Context,
 		id string,
+		revokedAt int64,
+	) error
+
+	RevokeByUserID(
+		ctx context.Context,
+		userID string,
 		revokedAt int64,
 	) error
 }

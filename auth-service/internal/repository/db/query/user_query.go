@@ -1,7 +1,7 @@
 package query
 
 const (
-	UserCreate = `
+	AddUser = `
 		INSERT INTO users (
 			id,
 			email,
@@ -16,7 +16,7 @@ const (
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
 	`
 
-	UserFindByEmail = `
+	FindByEmail = `
 		SELECT
 			id,
 			email,
@@ -32,7 +32,7 @@ const (
 		LIMIT 1
 	`
 
-	UserFindByID = `
+	FindByUserID = `
 		SELECT
 			id,
 			email,
@@ -46,5 +46,14 @@ const (
 		FROM users
 		WHERE id = $1
 		LIMIT 1
+	`
+
+	UpdateEmailVerified = `
+		UPDATE users
+		SET
+			email_verified = TRUE,
+			email_verified_at = $1,
+			updated_at = $2
+		WHERE id = $3
 	`
 )

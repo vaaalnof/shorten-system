@@ -13,12 +13,14 @@ func getClientIP(
 	if ip := c.Get(
 		"CF-Connecting-IP",
 	); ip != "" {
+
 		return ip
 	}
 
 	if ip := c.Get(
 		"X-Real-IP",
 	); ip != "" {
+
 		return ip
 	}
 
@@ -45,38 +47,26 @@ func RequestContext() fiber.Handler {
 		c *fiber.Ctx,
 	) error {
 
-		deviceID := strings.TrimSpace(
-			c.Get("X-Device-ID"),
-		)
-
-		deviceType := strings.TrimSpace(
-			c.Get("X-Device-Type"),
-		)
-
 		clientIP := getClientIP(
 			c,
 		)
 
-		userAgent := c.Get(
-			"User-Agent",
+		userAgent := strings.TrimSpace(
+			c.Get(
+				"User-Agent",
+			),
 		)
 
 		auth := strings.TrimSpace(
-			c.Get("Authorization"),
+			c.Get(
+				"Authorization",
+			),
 		)
 
 		refreshToken := strings.TrimSpace(
-			c.Get("X-Refresh-Token"),
-		)
-
-		c.Locals(
-			"device_id",
-			deviceID,
-		)
-
-		c.Locals(
-			"device_type",
-			deviceType,
+			c.Get(
+				"X-Refresh-Token",
+			),
 		)
 
 		c.Locals(
@@ -100,8 +90,6 @@ func RequestContext() fiber.Handler {
 		)
 
 		meta := &RequestMeta{
-			DeviceID:     deviceID,
-			DeviceType:   deviceType,
 			ClientIP:     clientIP,
 			UserAgent:    userAgent,
 			Auth:         auth,
