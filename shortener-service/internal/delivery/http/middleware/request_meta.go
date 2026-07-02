@@ -7,9 +7,10 @@ import (
 )
 
 type RequestMeta struct {
-	Auth      string
-	UserID    string
-	SessionID string
+	Auth          string
+	UserID        string
+	SessionID     string
+	EmailVerified string
 
 	Referer   string
 	UserAgent string
@@ -33,33 +34,6 @@ func getLocalString(
 	}
 
 	return ""
-}
-
-func FromFiber(
-	c *fiber.Ctx,
-) *RequestMeta {
-
-	return &RequestMeta{
-		Auth: getLocalString(
-			c,
-			"authorization",
-		),
-
-		Referer: getLocalString(
-			c,
-			"referer",
-		),
-
-		UserAgent: getLocalString(
-			c,
-			"user_agent",
-		),
-
-		IPAddress: getLocalString(
-			c,
-			"ip_address",
-		),
-	}
 }
 
 func WithMeta(

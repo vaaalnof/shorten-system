@@ -36,7 +36,10 @@ func (m *AuthMiddleware) Handle(
 		)
 	}
 
-	userID, sessionID, err := m.authClient.ValidateToken(
+	userID,
+		sessionID,
+		emailVerified,
+		err := m.authClient.ValidateToken(
 		c.UserContext(),
 		meta.Auth,
 	)
@@ -51,6 +54,7 @@ func (m *AuthMiddleware) Handle(
 
 	meta.UserID = userID
 	meta.SessionID = sessionID
+	meta.EmailVerified = emailVerified
 
 	ctx := WithMeta(
 		c.UserContext(),

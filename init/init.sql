@@ -111,30 +111,6 @@ CREATE INDEX idx_sessions_revoked_at
 CREATE INDEX idx_sessions_user_revoked
     ON user_sessions(user_id, revoked_at);
 
--- =========================================================
-
--- OAUTH STATES
-
--- OAUTH SECURITY
-
--- =========================================================
-
-CREATE TABLE oauth_states (
-    id UUID PRIMARY KEY
-        DEFAULT gen_random_uuid(),
-    state VARCHAR(255) NOT NULL UNIQUE,
-    provider VARCHAR(50) NOT NULL,
-    expired_at BIGINT NOT NULL,
-    created_at BIGINT NOT NULL
-        DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT
-);
-
--- =========================================================
--- OAUTH STATE INDEXES
--- =========================================================
-
-CREATE INDEX idx_oauth_states_expired_at
-    ON oauth_states(expired_at);
 
 
 
@@ -463,10 +439,7 @@ CREATE INDEX idx_analytics_events_clicked_at
     ON analytics_events(clicked_at);
 
 CREATE INDEX idx_analytics_events_url_clicked
-    ON analytics_events(
-                        url_id,
-                        clicked_at
-        );
+    ON analytics_events(url_id, clicked_at);
 
 -- =========================================================
 -- URL DAILY VISITORS
@@ -475,25 +448,20 @@ CREATE INDEX idx_analytics_events_url_clicked
 -- =========================================================
 
 CREATE TABLE url_daily_visitors (
-                                    id BIGSERIAL PRIMARY KEY,
-
-                                    url_id UUID NOT NULL
-                                        REFERENCES urls(id)
-                                            ON DELETE CASCADE,
-
-                                    analytics_date BIGINT NOT NULL,
-
-                                    visitor_hash VARCHAR(64) NOT NULL,
-
-                                    created_at BIGINT NOT NULL
-                                        DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
-
-                                    CONSTRAINT uq_url_daily_visitors
-                                        UNIQUE (
-                                                url_id,
-                                                analytics_date,
-                                                visitor_hash
-                                            )
+    id BIGSERIAL PRIMARY KEY,
+    url_id UUID NOT NULL
+        REFERENCES urls(id)
+            ON DELETE CASCADE,
+    analytics_date BIGINT NOT NULL,
+    visitor_hash VARCHAR(64) NOT NULL,
+    created_at BIGINT NOT NULL
+        DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
+    CONSTRAINT uq_url_daily_visitors
+        UNIQUE (
+                url_id,
+                analytics_date,
+                visitor_hash
+               )
 );
 
 -- =========================================================
@@ -513,31 +481,22 @@ CREATE INDEX idx_url_daily_visitors_date
 -- =========================================================
 
 CREATE TABLE url_daily_analytics (
-                                     id BIGSERIAL PRIMARY KEY,
-
-                                     url_id UUID NOT NULL
-                                         REFERENCES urls(id)
-                                             ON DELETE CASCADE,
-
-                                     analytics_date BIGINT NOT NULL,
-
-                                     total_clicks BIGINT NOT NULL
-                                         DEFAULT 0,
-
-                                     unique_visitors BIGINT NOT NULL
-                                         DEFAULT 0,
-
-                                     created_at BIGINT NOT NULL
-                                         DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
-
-                                     updated_at BIGINT NOT NULL
-                                         DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
-
-                                     CONSTRAINT uq_url_daily_analytics
-                                         UNIQUE (
-                                                 url_id,
-                                                 analytics_date
-                                             )
+    id BIGSERIAL PRIMARY KEY,
+    url_id UUID NOT NULL
+        REFERENCES urls(id)
+            ON DELETE CASCADE,
+    analytics_date BIGINT NOT NULL,
+    total_clicks BIGINT NOT NULL DEFAULT 0,
+    unique_visitors BIGINT NOT NULL DEFAULT 0,
+    created_at BIGINT NOT NULL
+        DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
+    updated_at BIGINT NOT NULL
+        DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
+    CONSTRAINT uq_url_daily_analytics
+        UNIQUE (
+                url_id,
+                analytics_date
+               )
 );
 
 -- =========================================================

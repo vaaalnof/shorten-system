@@ -32,6 +32,7 @@ func (c *Client) ValidateToken(
 ) (
 	userID string,
 	sessionID string,
+	emailVerified string,
 	err error,
 ) {
 
@@ -43,7 +44,7 @@ func (c *Client) ValidateToken(
 	)
 
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	req.Header.Set(
@@ -56,13 +57,13 @@ func (c *Client) ValidateToken(
 	)
 
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", "", errors.New(
+		return "", "", "", errors.New(
 			"invalid token",
 		)
 	}
@@ -71,22 +72,23 @@ func (c *Client) ValidateToken(
 		Message string `json:"message"`
 
 		Data struct {
-			UserID    string `json:"user_id"`
-			SessionID string `json:"session_id"`
+			UserID        string `json:"user_id"`
+			SessionID     string `json:"session_id"`
+			EmailVerified string `json:"email_verified"`
 		} `json:"data"`
 	}
 
-	err = json.NewDecoder(
+	if err := json.NewDecoder(
 		resp.Body,
 	).Decode(
 		&result,
-	)
+	); err != nil {
 
-	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	return result.Data.UserID,
 		result.Data.SessionID,
+		result.Data.EmailVerified,
 		nil
 }

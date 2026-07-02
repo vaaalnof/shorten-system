@@ -44,6 +44,13 @@ func (u *URLUseCase) Add(
 		)
 	}
 
+	if meta.EmailVerified != "verified" {
+
+		return nil, exception.Forbidden(
+			"email is not verified",
+		)
+	}
+
 	shortCode := strings.TrimSpace(
 		request.ShortCode,
 	)
