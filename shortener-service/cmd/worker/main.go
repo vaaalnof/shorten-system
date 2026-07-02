@@ -28,30 +28,18 @@ func main() {
 	)
 
 	log := config.NewLogger(
-		viperConfig,
+		settings.Log,
 	)
 
 	db := config.NewDatabase(
-		viperConfig,
+		settings.Database,
 		log,
 	)
 
 	natsConfig := config.NewNATSClient(
-		viperConfig,
+		settings.Web.AppName,
+		settings.NATS,
 		log,
-	)
-
-	// =====================================================
-	// BOOTSTRAP
-	// =====================================================
-
-	config.BootstrapWorker(
-		&config.BootstrapWorkerConfig{
-			DB:     db,
-			NATS:   natsConfig,
-			Log:    log,
-			Config: viperConfig,
-		},
 	)
 
 	// =====================================================
@@ -98,7 +86,7 @@ func main() {
 	visitorHash := security.NewVisitorHash()
 
 	geoIP, err := security.NewGeoIP(
-		settings.GeoIPDatabasePath,
+		settings.GeoIP.DatabasePath,
 	)
 
 	if err != nil {
@@ -111,7 +99,7 @@ func main() {
 
 	log.WithField(
 		"path",
-		settings.GeoIPDatabasePath,
+		settings.GeoIP.DatabasePath,
 	).Info(
 		"geoip database loaded",
 	)

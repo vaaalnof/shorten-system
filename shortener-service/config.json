@@ -12,45 +12,6 @@
     "level": 6
   },
 
-  "database": {
-    "master": {
-      "host": "localhost",
-      "port": 5432,
-      "username": "postgres",
-      "password": "postgres",
-      "name": "shorten_db",
-      "sslmode": "disable",
-
-      "pool": {
-        "idle": 10,
-        "max": 100,
-        "lifetime": 300
-      }
-    },
-
-    "slave": {
-      "host": "localhost",
-      "port": 5432,
-      "username": "postgres",
-      "password": "postgres",
-      "name": "shorten_db",
-      "sslmode": "disable",
-
-      "pool": {
-        "idle": 10,
-        "max": 100,
-        "lifetime": 300
-      }
-    }
-  },
-
-  "redis": {
-    "host": "localhost",
-    "port": "6379",
-    "password": "",
-    "db": 0
-  },
-
   "cache": {
     "url_ttl_seconds": 300
   },
@@ -60,7 +21,6 @@
   },
 
   "nats": {
-    "url": "nats://localhost:4222",
     "timeout_seconds": 5,
     "reconnect_wait_seconds": 2,
     "max_reconnects": -1,
@@ -77,11 +37,6 @@
   },
 
   "auth_service": {
-    "base_url": "http://localhost:3000",
     "timeout_seconds": 5
-  },
-
-  "shortener": {
-    "base_url": "http://localhost:3001"
   }
 }

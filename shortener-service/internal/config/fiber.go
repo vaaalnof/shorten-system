@@ -8,27 +8,28 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 func NewFiber(
-	config *viper.Viper,
+	cfg WebSettings,
+	log *logrus.Logger,
 ) *fiber.App {
 
 	return fiber.New(
 		fiber.Config{
-			AppName: config.GetString(
-				"app.name",
+			AppName: cfg.AppName,
+			Prefork: cfg.Prefork,
+
+			ErrorHandler: NewErrorHandler(
+				log,
 			),
-			Prefork: config.GetBool(
-				"web.prefork",
-			),
-			ErrorHandler: NewErrorHandler(),
 		},
 	)
 }
 
-func NewErrorHandler() fiber.ErrorHandler {
+func NewErrorHandler(
+	log *logrus.Logger,
+) fiber.ErrorHandler {
 
 	return func(
 		ctx *fiber.Ctx,
@@ -80,17 +81,13 @@ func NewErrorHandler() fiber.ErrorHandler {
 		// UNHANDLED ERROR
 		// =====================================================
 
-		logrus.WithError(
-			err,
-		).WithFields(
-			logrus.Fields{
+		log.WithError(err).
+			WithFields(logrus.Fields{
 				"path":   ctx.Path(),
 				"method": ctx.Method(),
 				"ip":     ctx.IP(),
-			},
-		).Error(
-			"unhandled error",
-		)
+			}).
+			Error("unhandled error")
 
 		// =====================================================
 		// INTERNAL SERVER ERROR

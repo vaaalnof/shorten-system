@@ -21,20 +21,14 @@ func SetupAnalytics(
 
 		_, err = js.AddStream(
 			&gonats.StreamConfig{
-
 				Name: natsutil.AnalyticsStream,
-
 				Subjects: []string{
 					natsutil.AnalyticsSubject,
 				},
-
-				Storage: gonats.FileStorage,
-
+				Storage:   gonats.FileStorage,
 				Retention: gonats.LimitsPolicy,
-
-				Replicas: settings.NATSAnalyticsReplicas,
-
-				MaxAge: settings.NATSAnalyticsMaxAge,
+				Replicas:  settings.NATS.Analytics.Replicas,
+				MaxAge:    settings.NATS.Analytics.MaxAge,
 			},
 		)
 
@@ -56,14 +50,10 @@ func SetupAnalytics(
 		natsutil.AnalyticsStream,
 
 		&gonats.ConsumerConfig{
-
-			Durable: natsutil.AnalyticsConsumer,
-
-			AckPolicy: gonats.AckExplicitPolicy,
-
-			AckWait: settings.NATSAnalyticsAckWait,
-
-			MaxDeliver: settings.NATSAnalyticsMaxDeliver,
+			Durable:    natsutil.AnalyticsConsumer,
+			AckPolicy:  gonats.AckExplicitPolicy,
+			AckWait:    settings.NATS.Analytics.AckWait,
+			MaxDeliver: settings.NATS.Analytics.MaxDeliver,
 		},
 	)
 

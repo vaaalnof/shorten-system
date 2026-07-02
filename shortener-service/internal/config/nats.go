@@ -1,11 +1,8 @@
 package config
 
 import (
-	"time"
-
 	"github.com/nats-io/nats.go"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 type NATSConfig struct {
@@ -15,53 +12,28 @@ type NATSConfig struct {
 }
 
 func NewNATSClient(
-	v *viper.Viper,
+	appName string,
+	cfg NATSSettings,
 	log *logrus.Logger,
 ) *NATSConfig {
 
-	url := v.GetString(
-		"nats.shorturl",
-	)
-
-	timeout := time.Duration(
-		v.GetInt(
-			"nats.timeout_seconds",
-		),
-	) * time.Second
-
-	reconnectWait := time.Duration(
-		v.GetInt(
-			"nats.reconnect_wait_seconds",
-		),
-	) * time.Second
-
-	maxReconnects := v.GetInt(
-		"nats.max_reconnects",
-	)
-
-	reconnectBufferMB := v.GetInt(
-		"nats.reconnect_buffer_mb",
-	)
-
 	conn, err := nats.Connect(
-		url,
+		cfg.URL,
 
 		nats.Name(
-			v.GetString(
-				"app.name",
-			),
+			appName,
 		),
 
 		nats.Timeout(
-			timeout,
+			cfg.Timeout,
 		),
 
 		nats.MaxReconnects(
-			maxReconnects,
+			cfg.MaxReconnects,
 		),
 
 		nats.ReconnectWait(
-			reconnectWait,
+			cfg.ReconnectWait,
 		),
 
 		nats.RetryOnFailedConnect(
@@ -69,7 +41,7 @@ func NewNATSClient(
 		),
 
 		nats.ReconnectBufSize(
-			reconnectBufferMB*1024*1024,
+			cfg.ReconnectBufferMB*1024*1024,
 		),
 
 		nats.ErrorHandler(
@@ -80,9 +52,7 @@ func NewNATSClient(
 			) {
 
 				log.WithError(err).
-					Error(
-						"nats async error",
-					)
+					Error("nats async error")
 			},
 		),
 
@@ -93,9 +63,7 @@ func NewNATSClient(
 			) {
 
 				log.WithError(err).
-					Warn(
-						"nats disconnected",
-					)
+					Warn("nats disconnected")
 			},
 		),
 
@@ -126,25 +94,19 @@ func NewNATSClient(
 	if err != nil {
 
 		log.WithError(err).
-			Fatal(
-				"failed to connect to nats",
-			)
+			Fatal("failed to connect to nats")
 	}
 
 	if err := conn.Flush(); err != nil {
 
 		log.WithError(err).
-			Fatal(
-				"failed to flush nats connection",
-			)
+			Fatal("failed to flush nats connection")
 	}
 
 	if err := conn.LastError(); err != nil {
 
 		log.WithError(err).
-			Fatal(
-				"failed to verify nats connection",
-			)
+			Fatal("failed to verify nats connection")
 	}
 
 	js, err := conn.JetStream()
@@ -152,14 +114,12 @@ func NewNATSClient(
 	if err != nil {
 
 		log.WithError(err).
-			Fatal(
-				"failed to create jetstream context",
-			)
+			Fatal("failed to create JetStream context")
 	}
 
 	log.Infof(
-		"connected to nats at %s",
-		url,
+		"connected to NATS at %s",
+		cfg.URL,
 	)
 
 	return &NATSConfig{

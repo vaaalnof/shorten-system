@@ -93,11 +93,11 @@ func (c *Consumer) Consume(
 		default:
 		}
 
-		msgs, err := sub.Fetch(
-			c.settings.NATSAnalyticsFetchBatch,
+		msg, err := sub.Fetch(
+			c.settings.NATS.Analytics.FetchBatch,
 
 			gonats.MaxWait(
-				c.settings.NATSAnalyticsFetchTimeout,
+				c.settings.NATS.Analytics.FetchTimeout,
 			),
 		)
 
@@ -127,17 +127,17 @@ func (c *Consumer) Consume(
 			return err
 		}
 
-		if len(msgs) > 0 {
+		if len(msg) > 0 {
 
 			c.log.WithField(
 				"batch_size",
-				len(msgs),
+				len(msg),
 			).Debug(
 				"analytics messages fetched",
 			)
 		}
 
-		for _, msg := range msgs {
+		for _, msg := range msg {
 
 			var event entity.AnalyticsEvent
 

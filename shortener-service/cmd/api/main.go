@@ -40,44 +40,30 @@ func main() {
 	)
 
 	log := config.NewLogger(
-		viperConfig,
+		settings.Log,
 	)
 
 	db := config.NewDatabase(
-		viperConfig,
+		settings.Database,
 		log,
 	)
 
 	redis := config.NewRedisClient(
-		viperConfig,
+		settings.Redis,
 		log,
 	)
 
 	natsConfig := config.NewNATSClient(
-		viperConfig,
+		settings.Web.AppName,
+		settings.NATS,
 		log,
 	)
 
 	validate := config.NewValidator()
 
 	app := config.NewFiber(
-		viperConfig,
-	)
-
-	// =====================================================
-	// BOOTSTRAP
-	// =====================================================
-
-	config.BootstrapAPI(
-		&config.BootstrapAPIConfig{
-			DB:       db,
-			Redis:    redis,
-			NATS:     natsConfig,
-			App:      app,
-			Log:      log,
-			Validate: validate,
-			Config:   viperConfig,
-		},
+		settings.Web,
+		log,
 	)
 
 	// =====================================================
@@ -136,8 +122,8 @@ func main() {
 	// =====================================================
 
 	authClient := authinfra.NewClient(
-		settings.AuthServiceBaseURL,
-		settings.AuthServiceTimeout,
+		settings.Auth.BaseURL,
+		settings.Auth.Timeout,
 	)
 
 	// =====================================================
@@ -164,7 +150,7 @@ func main() {
 		reservedAliasRepo,
 		passwordHash,
 		redisCache,
-		settings.URLCacheTTL,
+		settings.Cache.UrlTTL,
 		analyticsPublisher,
 		log,
 	)
@@ -179,7 +165,7 @@ func main() {
 	qrUseCase := qr.NewQRUseCase(
 		validate,
 		urlRepo,
-		settings.ShortenerBaseURL,
+		settings.Shortener.BaseURL,
 		log,
 	)
 
@@ -221,9 +207,7 @@ func main() {
 
 	addr := fmt.Sprintf(
 		":%d",
-		viperConfig.GetInt(
-			"web.port",
-		),
+		settings.Web.Port,
 	)
 
 	go func() {
@@ -294,40 +278,31 @@ func main() {
 		)
 	}
 
-	// =====================================================
-	// CLOSE NATS
-	// =====================================================
+	defer func() {
 
-	if natsConfig != nil &&
-		natsConfig.Conn != nil {
+		if natsConfig != nil &&
+			natsConfig.Conn != nil {
 
-		natsConfig.Conn.Close()
-	}
-
-	// =====================================================
-	// CLOSE REDIS
-	// =====================================================
-
-	if redis != nil &&
-		redis.Client != nil {
-
-		_ = redis.Client.Close()
-	}
-
-	// =====================================================
-	// CLOSE DATABASE
-	// =====================================================
-
-	if db != nil {
-
-		if db.Master != nil {
-			_ = db.Master.Close()
+			natsConfig.Conn.Close()
 		}
 
-		if db.Slave != nil {
-			_ = db.Slave.Close()
+		if redis != nil &&
+			redis.Client != nil {
+
+			_ = redis.Client.Close()
 		}
-	}
+
+		if db != nil {
+
+			if db.Master != nil {
+				_ = db.Master.Close()
+			}
+
+			if db.Slave != nil {
+				_ = db.Slave.Close()
+			}
+		}
+	}()
 
 	log.Info(
 		"server stopped gracefully",

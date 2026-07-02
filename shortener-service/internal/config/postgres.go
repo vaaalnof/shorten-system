@@ -3,12 +3,10 @@ package config
 import (
 	"database/sql"
 	"fmt"
-	"time"
 
 	_ "github.com/lib/pq"
 
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 type Database struct {
@@ -18,20 +16,20 @@ type Database struct {
 }
 
 func NewDatabase(
-	v *viper.Viper,
+	cfg DatabaseSettings,
 	log *logrus.Logger,
 ) *Database {
 
 	master := newPostgresConnection(
-		v,
+		cfg.Master,
 		log,
-		"database.master",
+		"master",
 	)
 
 	slave := newPostgresConnection(
-		v,
+		cfg.Slave,
 		log,
-		"database.slave",
+		"slave",
 	)
 
 	return &Database{
@@ -42,55 +40,19 @@ func NewDatabase(
 }
 
 func newPostgresConnection(
-	v *viper.Viper,
+	cfg PostgresSettings,
 	log *logrus.Logger,
-	prefix string,
+	name string,
 ) *sql.DB {
-
-	username := v.GetString(
-		fmt.Sprintf("%s.username", prefix),
-	)
-
-	password := v.GetString(
-		fmt.Sprintf("%s.password", prefix),
-	)
-
-	host := v.GetString(
-		fmt.Sprintf("%s.host", prefix),
-	)
-
-	port := v.GetInt(
-		fmt.Sprintf("%s.port", prefix),
-	)
-
-	database := v.GetString(
-		fmt.Sprintf("%s.name", prefix),
-	)
-
-	sslmode := v.GetString(
-		fmt.Sprintf("%s.sslmode", prefix),
-	)
-
-	idleConnection := v.GetInt(
-		fmt.Sprintf("%s.pool.idle", prefix),
-	)
-
-	maxConnection := v.GetInt(
-		fmt.Sprintf("%s.pool.max", prefix),
-	)
-
-	maxLifeTimeConnection := v.GetInt(
-		fmt.Sprintf("%s.pool.lifetime", prefix),
-	)
 
 	dsn := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		host,
-		port,
-		username,
-		password,
-		database,
-		sslmode,
+		cfg.Host,
+		cfg.Port,
+		cfg.Username,
+		cfg.Password,
+		cfg.Name,
+		cfg.SSLMode,
 	)
 
 	db, err := sql.Open(
@@ -100,40 +62,40 @@ func newPostgresConnection(
 
 	if err != nil {
 
-		log.Fatalf(
-			"failed to open PostgreSQL connection (%s): %v",
-			prefix,
-			err,
-		)
+		log.WithError(err).
+			Fatalf(
+				"failed to open PostgreSQL connection (%s)",
+				name,
+			)
 	}
 
 	db.SetMaxIdleConns(
-		idleConnection,
+		cfg.Pool.Idle,
 	)
 
 	db.SetMaxOpenConns(
-		maxConnection,
+		cfg.Pool.Max,
 	)
 
 	db.SetConnMaxLifetime(
-		time.Second * time.Duration(maxLifeTimeConnection),
+		cfg.Pool.Lifetime,
 	)
 
 	if err := db.Ping(); err != nil {
 
-		log.Fatalf(
-			"failed to ping PostgreSQL (%s): %v",
-			prefix,
-			err,
-		)
+		log.WithError(err).
+			Fatalf(
+				"failed to ping PostgreSQL (%s)",
+				name,
+			)
 	}
 
 	log.Infof(
 		"connected PostgreSQL (%s) at %s:%d/%s",
-		prefix,
-		host,
-		port,
-		database,
+		name,
+		cfg.Host,
+		cfg.Port,
+		cfg.Name,
 	)
 
 	return db

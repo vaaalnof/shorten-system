@@ -3,21 +3,52 @@ package config
 import (
 	"fmt"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
 func NewViper() *viper.Viper {
-	config := viper.New()
 
-	config.SetConfigName("config")
-	config.SetConfigType("json")
-	config.AddConfigPath("./../")
-	config.AddConfigPath("./")
-	err := config.ReadInConfig()
+	// =====================================================
+	// LOAD .ENV (Development Only)
+	// =====================================================
 
-	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %w \n", err))
+	_ = godotenv.Load()
+	_ = godotenv.Load("../.env")
+
+	v := viper.New()
+
+	// =====================================================
+	// CONFIG FILE
+	// =====================================================
+
+	v.SetConfigName("config")
+	v.SetConfigType("json")
+
+	v.AddConfigPath("./")
+	v.AddConfigPath("./../")
+
+	// =====================================================
+	// LOAD CONFIG FILE
+	// =====================================================
+
+	if err := v.ReadInConfig(); err != nil {
+
+		panic(
+			fmt.Errorf(
+				"failed to load config: %w",
+				err,
+			),
+		)
 	}
 
-	return config
+	// =====================================================
+	// ENV BINDING
+	// =====================================================
+
+	bindEnvs(
+		v,
+	)
+
+	return v
 }
